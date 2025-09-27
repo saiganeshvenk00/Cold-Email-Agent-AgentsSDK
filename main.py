@@ -1,8 +1,11 @@
 import asyncio
+from dotenv import load_dotenv
 from cold_pipeline import run_cold_workflow
 from reply_pipeline import run_reply_workflow
 
 async def main():
+    # Load environment variables from .env for local testing
+    load_dotenv()
     # --- Example: Cold pipeline ---
     cold_pitch = (
         "I'm a Solutions Architect with 3 years of experience in AI infrastructure and presales, "
