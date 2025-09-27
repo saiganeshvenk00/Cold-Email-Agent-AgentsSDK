@@ -1,31 +1,33 @@
+import asyncio
+from agent_sdk import Runner
 from .agents import reply_agent, reply_email_manager
-from .sendgrid_utils import send_reply_email
-from agents import Runner  # from the Agents SDK
 
-async def run_reply_workflow(email_from: str, email_subject: str, email_body: str) -> dict:
+async def run_reply_workflow(incoming_text: str, to_email: str) -> dict:
     """
-    Orchestrates the reply pipeline:
-    1. Draft reply using Reply Agent
-    2. Polish/manage reply using Reply Email Manager
-    3. Send formatted reply via SendGrid
+    Full reply pipeline:
+    1. Reply Agent drafts a response.
+    2. Reply Email Manager formats and sends it via SendGrid.
     """
-    # Step A: Draft reply
-    reply_draft = await Runner.run(reply_agent, email_body)
 
-    # Step B: Manage/format draft with Reply Email Manager
-    managed_reply = await Runner.run(reply_email_manager, reply_draft.final_output)
+    # Step A: Generate draft reply
+    draft_reply = await Runner.run(reply_agent, incoming_text)
 
-    # Step C: Send via SendGrid
-    status_code = send_reply_email(
-        to_email=email_from,
-        subject=f"Re: {email_subject}",
-        body_text=managed_reply.final_output
+    # Step B: Email Manager finalizes and sends
+    managed_reply = await Runner.run(
+        reply_email_manager,
+        f"To: {to_email}\n\n{draft_reply.final_output}"
     )
 
     return {
-        "to": email_from,
-        "original_subject": email_subject,
-        "reply_draft": reply_draft.final_output,
-        "managed_reply": managed_reply.final_output,
-        "status": f"Sent via SendGrid (status {status_code})"
+        "draft_reply": draft_reply.final_output,
+        "managed_reply": managed_reply.final_output
     }
+
+# For quick testing
+if __name__ == "__main__":
+    async def main():
+        incoming = "Thanks for your email. Can you share more about your experience?"
+        output = await run_reply_workflow(incoming, "recruiter@example.com")
+        print("Reply Workflow result:\n", output)
+
+    asyncio.run(main())

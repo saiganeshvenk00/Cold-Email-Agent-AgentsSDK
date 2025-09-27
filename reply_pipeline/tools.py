@@ -1,18 +1,24 @@
 import os
 import sendgrid
 from sendgrid.helpers.mail import Mail, Email, To, Content
-from typing import Dict
 from agent_sdk import function_tool
 
+
 @function_tool
-def send_html_email(subject: str, html_body: str, to_email: str = "ed.donner@gmail.com") -> Dict[str, str]:
-    """
-    Send a reply email with the given subject and HTML body via SendGrid.
-    """
+def generate_subject(body: str) -> str:
+    """Generate a simple subject line from the first line of the body."""
+    if not body:
+        return "Quick introduction"
+    return body.splitlines()[0][:60]  # first line only, max 60 chars
+
+
+@function_tool
+def send_html_email(subject: str, html_body: str) -> dict:
+    """Send out an email with the given subject and HTML body via SendGrid."""
     sg = sendgrid.SendGridAPIClient(api_key=os.environ.get("SENDGRID_API_KEY"))
-    from_email = Email("ed@edwarddonner.com")   # change to verified sender
-    to_email = To(to_email)                     # dynamic recipient
+    from_email = Email("saiganeshv00@gmail.com")   # hardcoded like Ed’s notebook
+    to_email = To("saiganeshvenk00@gmail.com")       # hardcoded for demo
     content = Content("text/html", html_body)
     mail = Mail(from_email, to_email, subject, content).get()
     sg.client.mail.send.post(request_body=mail)
-    return {"status": "success", "subject": subject, "to": str(to_email)}
+    return {"status": "success", "subject": subject}

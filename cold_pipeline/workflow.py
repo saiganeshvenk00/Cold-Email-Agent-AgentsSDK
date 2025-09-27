@@ -22,7 +22,7 @@ async def run_cold_workflow(product_pitch: str) -> dict:
 # If running this file directly for a quick test
 if __name__ == "__main__":
     async def main():
-        pitch = "Introducing ComplAI – the easiest way to automate SOC2 compliance."
+        pitch = "I'm a Solutions Architect with 3 years experience in AI infrastructure and presales, now exploring roles at the intersection of AI and product."
         output = await run_cold_workflow(pitch)
         print("Workflow result:\n", output)
 

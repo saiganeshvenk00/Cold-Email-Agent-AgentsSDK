@@ -1,24 +1,26 @@
- from agents import Agent  # from the Agents SDK
+from agent_sdk import Agent
+from .tools import send_html_email, generate_subject
 
-# Drafts a polite, professional reply
+# --- Reply Agent ---
 reply_agent = Agent(
     name="Reply Agent",
-    instructions=(
-        "You are a polite, professional responder to customer emails. "
-        "Write concise, empathetic replies that maintain context."
-    ),
-    model="gpt-4o-mini"
+    instructions="""
+    You are responsible for drafting polite, professional email replies.
+    Take the incoming email text as input and generate a suitable reply.
+    """,
+    model="gpt-4.1-mini"
 )
 
-# Formats and manages replies for sending
+# --- Reply Email Manager ---
 reply_email_manager = Agent(
     name="Reply Email Manager",
-    instructions=(
-        "You take a drafted reply email and prepare it for sending. "
-        "Preserve the subject with a 'Re:' prefix and convert the body "
-        "into a professional, well-structured email ready for delivery."
-    ),
-    model="gpt-4o-mini"
+    instructions="""
+    You receive a draft reply from the Reply Agent.
+    1. Clean and format the reply for sending.
+    2. Generate a subject line if missing using the generate_subject tool.
+    3. Format the reply as proper HTML.
+    4. Call send_html_email to send the reply (include To: email when provided).
+    """,
+    model="gpt-4.1-mini",
+    tools=[generate_subject, send_html_email]
 )
-
-
