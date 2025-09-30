@@ -1,42 +1,33 @@
-import asyncio
-from agent_sdk import Runner
-from .agents import reply_agent, reply_email_manager
-from .tools import receive_incoming_reply
+import os
+from typing import Dict
+import sendgrid
+from sendgrid.helpers.mail import Mail, Email, To, Content
+from agent_sdk import function_tool
+from fastapi import FastAPI, Request
 
-async def run_reply_workflow(incoming_text: str, to_email: str) -> dict:
-    """
-    Full reply pipeline:
-    1. Reply Agent drafts a response.
-    2. Reply Email Manager formats and sends it via SendGrid.
-    """
+# Create FastAPI app
+app = FastAPI()
 
-    # Step 0: Ingest incoming reply via tool (simulated webhook)
-    ingested = receive_incoming_reply(
-        email_from="unknown@example.com",
-        subject="Incoming reply",
-        body=incoming_text,
-    )
-    normalized_text = ingested.get("body", incoming_text)
+@function_tool
+def generate_subject(body: str) -> str:
+    if not body:
+        return "Quick introduction"
+    return body.splitlines()[0][:60]
 
-    # Step A: Generate draft reply
-    draft_reply = await Runner.run(reply_agent, normalized_text)
+@function_tool
+def send_html_email(subject: str, html_body: str) -> Dict[str, str]:
+    sg = sendgrid.SendGridAPIClient(api_key=os.environ.get("SENDGRID_API_KEY"))
+    from_email = Email("saiganeshv00@gmail.com")
+    to_email = To("saiganeshvenk00@gmail.com")
+    content = Content("text/html", html_body)
+    mail = Mail(from_email, to_email, subject, content).get()
+    sg.client.mail.send.post(request_body=mail)
+    return {"status": "success", "subject": subject}
 
-    # Step B: Email Manager finalizes and sends
-    managed_reply = await Runner.run(
-        reply_email_manager,
-        f"To: {to_email}\n\n{draft_reply.final_output}"
-    )
-
-    return {
-        "draft_reply": draft_reply.final_output,
-        "managed_reply": managed_reply.final_output
-    }
-
-# For quick testing
-if __name__ == "__main__":
-    async def main():
-        incoming = "Thanks for your email. Can you share more about your experience?"
-        output = await run_reply_workflow(incoming, "recruiter@example.com")
-        print("Reply Workflow result:\n", output)
-
-    asyncio.run(main())
+@app.post("/incoming-reply")
+async def receive_incoming_reply(request: Request):
+    data = await request.json()
+    email_from = data.get("from", "unknown@example.com")
+    subject = data.get("subject", "(no subject)")
+    body = data.get("text", data.get("body", ""))
+    return {"from": email_from, "subject": subject, "body": body, "status": "received"}
