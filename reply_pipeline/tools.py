@@ -34,7 +34,6 @@ import uvicorn
 app = FastAPI()
 
 
-from .workflow import run_reply_workflow
 
 
 @function_tool
@@ -48,6 +47,9 @@ async def receive_incoming_reply(request: Request):
     email_from = data.get("from", "unknown@example.com")
     subject = data.get("subject", "(no subject)")
     body = data.get("text", data.get("body", ""))
+
+    # Import here to avoid circular import at module load time
+    from .workflow import run_reply_workflow
 
     # Run the reply pipeline
     result = await run_reply_workflow(email_from, subject, body)
