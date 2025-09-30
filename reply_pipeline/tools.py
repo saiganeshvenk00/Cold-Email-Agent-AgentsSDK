@@ -34,30 +34,22 @@ import uvicorn
 app = FastAPI()
 
 
+from .workflow import run_reply_workflow
+
+
 @function_tool
 @app.post("/incoming-reply")
 async def receive_incoming_reply(request: Request):
     """
-    Real webhook: SendGrid (or another email provider) posts replies here.
-    Returns sender, subject, and body so the reply pipeline can use them.
+    Webhook endpoint: gets reply emails and triggers the reply pipeline.
     """
-    # Parse JSON payload from SendGrid (Inbound Parse or custom forwarder)
     data = await request.json()
 
-    # Extract useful fields with defaults
     email_from = data.get("from", "unknown@example.com")
     subject = data.get("subject", "(no subject)")
-    body = data.get("text", data.get("body", ""))  # "text" is common in SendGrid payloads
+    body = data.get("text", data.get("body", ""))
 
-    # Return a dict, which the agent pipeline can process
-    return {
-        "from": email_from,
-        "subject": subject,
-        "body": body,
-        "status": "received"
-    }
+    # Run the reply pipeline
+    result = await run_reply_workflow(email_from, subject, body)
 
-
-if __name__ == "__main__":
-    # Launch FastAPI server on port 8000 when run directly
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    return result
