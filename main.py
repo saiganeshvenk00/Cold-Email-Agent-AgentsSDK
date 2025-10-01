@@ -15,11 +15,17 @@ async def main():
     print("\n=== Cold Pipeline Result ===")
     print(cold_result)
 
-    # --- Example: Reply pipeline ---
-    incoming_email = "Thanks for your email, could you share more about your background?"
-    reply_result = await run_reply_workflow(incoming_email, to_email="recruiter@example.com")
-    print("\n=== Reply Pipeline Result ===")
-    print(reply_result)
+    # --- Example: Reply pipeline (guarded demo) ---
+    # Set RUN_REPLY_DEMO=1 to run this example; otherwise it will be skipped.
+    import os
+    if os.environ.get("RUN_REPLY_DEMO") == "1":
+        incoming_email = "Thanks for your email, could you share more about your background?"
+        incoming_email_from = "recruiter@example.com"
+        subject = "Re: Your email"
+        body = incoming_email
+        reply_result = await run_reply_workflow(incoming_email_from, subject, body)
+        print("\n=== Reply Pipeline Result ===")
+        print(reply_result)
 
 if __name__ == "__main__":
     asyncio.run(main())

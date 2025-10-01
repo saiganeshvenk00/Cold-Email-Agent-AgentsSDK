@@ -69,6 +69,9 @@ class Runner:
                 )
                 pick_res = await sales_picker.run(pick_prompt)
                 winning = pick_res.final_output
+                # Normalize if the picker echoed with a leading label like "Draft X:"
+                if winning.strip().lower().startswith("draft "):
+                    winning = winning.split("\n", 1)[1] if "\n" in winning else winning
             else:
                 winning = drafts[0] if drafts else input_text
 
@@ -83,8 +86,22 @@ class Runner:
                     if callable(t) and getattr(t, "__name__", "") == "send_html_email":
                         send_html_email = t
 
-                subject = (generate_subject(winning) if generate_subject else "Quick introduction")
-                html_body = f"<p>{winning}</p>"
+                # Treat first line as subject if separated by a blank line
+                email_subject = None
+                email_body_text = winning
+                if "\n\n" in winning:
+                    first_line, rest = winning.split("\n\n", 1)
+                    if first_line.strip():
+                        email_subject = first_line.strip()
+                        email_body_text = rest
+                subject = email_subject or (generate_subject(email_body_text) if generate_subject else "Quick introduction")
+                # Minimal HTML like the reply template (no inline font styles) for consistent rendering
+                paragraphs = [p.strip() for p in email_body_text.split("\n\n") if p.strip()]
+                html_body = (
+                    "<html><body>"
+                    f"{''.join(f'<p>{para}</p>' for para in paragraphs)}"
+                    "</body></html>"
+                )
                 if send_html_email:
                     try:
                         send_html_email(subject, html_body)
@@ -110,8 +127,30 @@ class Runner:
                 parts = reply_text.split("\n\n", 1)
                 reply_text = parts[1] if len(parts) == 2 else reply_text
 
-            subject = (generate_subject(reply_text) if generate_subject else "Re:")
-            html_body = f"<p>{reply_text}</p>"
+            # Extract optional subject line (first line followed by blank line)
+            body_only = reply_text
+            extracted_subject = None
+            if "\n\n" in reply_text:
+                first_line, rest = reply_text.split("\n\n", 1)
+                if first_line.strip():
+                    extracted_subject = first_line.strip()
+                    body_only = rest
+            subject = extracted_subject or (generate_subject(body_only) if generate_subject else "Re:")
+
+            # Enforce strict HTML structure for replies
+            company_name = "NimbusFlow"
+            greeting = "Hi, thank you so much for expressing your interest."
+            # Wrap body content into paragraphs
+            paragraphs = [p.strip() for p in body_only.split("\n\n") if p.strip()]
+            body_html = "".join(f"<p>{para}</p>" for para in paragraphs)
+            html_body = (
+                "<html><body>"
+                f"<p>{greeting}</p>"
+                f"{body_html}"
+                "<p>Best regards,</p>"
+                f"<p>Saiganesh<br>{company_name}</p>"
+                "</body></html>"
+            )
             if send_html_email:
                 try:
                     send_html_email(subject, html_body)
