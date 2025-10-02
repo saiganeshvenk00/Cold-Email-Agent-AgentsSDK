@@ -1,8 +1,9 @@
 import os
-import sendgrid
-from sendgrid.helpers.mail import Mail, Email, To, Content
-from agent_sdk import function_tool
 import re
+from typing import Dict, Optional
+import sendgrid
+from sendgrid.helpers.mail import Mail, Email, To, Content, Header
+from agent_sdk import function_tool
 
 
 @function_tool
@@ -14,15 +15,41 @@ def generate_subject(body: str) -> str:
 
 
 @function_tool
-def send_html_email(subject: str, html_body: str) -> dict:
-    """Send out an email with the given subject and HTML body via SendGrid."""
+def send_html_email(subject: str, html_body: str, to_email: Optional[str] = None, headers: Optional[Dict[str, str]] = None) -> dict:
+    """Send out an email with the given subject and HTML body via SendGrid.
+
+    Accepts dynamic recipient via to_email and optional SMTP-style headers
+    (e.g., In-Reply-To, References) to support threading.
+    Returns response headers so caller can capture provider Message-ID.
+    """
     sg = sendgrid.SendGridAPIClient(api_key=os.environ.get("SENDGRID_API_KEY"))
-    from_email = Email("saiganeshv00@gmail.com")   # hardcoded like Ed’s notebook
-    to_email = To("saiganeshvenk00@gmail.com")        # hardcoded like Ed’s notebook
+    # Sender is fixed as per requirement
+    default_from = "saiganeshv00@gmail.com"
+    default_to = os.environ.get("DEFAULT_TO_EMAIL", "saiganeshvenk00@gmail.com")
+
+    from_email = Email(default_from)
+    to_email_obj = To(to_email or default_to)
     content = Content("text/html", html_body)
-    mail = Mail(from_email, to_email, subject, content).get()
-    sg.client.mail.send.post(request_body=mail)
-    return {"status": "success", "subject": subject}
+    mail_obj = Mail(from_email, to_email_obj, subject, content)
+
+    # Add optional headers for email threading
+    if headers:
+        for k, v in headers.items():
+            if v:
+                try:
+                    mail_obj.add_header(Header(k, v))
+                except Exception:
+                    # Fallback to setting raw headers dict if helper fails
+                    try:
+                        mail_obj.headers = {**getattr(mail_obj, "headers", {}), k: v}
+                    except Exception:
+                        pass
+
+    response = sg.client.mail.send.post(request_body=mail_obj.get())
+    # Common SendGrid header key is 'X-Message-Id'
+    resp_headers = getattr(response, "headers", {}) or {}
+    message_id = resp_headers.get("X-Message-Id") or resp_headers.get("Message-Id")
+    return {"status": "success", "subject": subject, "message_id": message_id, "provider_headers": dict(resp_headers)}
 
 
 @function_tool
