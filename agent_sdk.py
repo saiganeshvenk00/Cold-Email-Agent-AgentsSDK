@@ -1,6 +1,7 @@
 from typing import Any, Callable, List, Optional, Dict
 
 from openai import OpenAI
+from thread_store import record_outbound_message, build_reply_headers
 
 
 def function_tool(func: Callable) -> Callable:
@@ -145,7 +146,15 @@ class Runner:
                 )
                 if send_html_email:
                     try:
-                        send_html_email(subject, html_body)
+                        to_email = None
+                        if context:
+                            to_email = context.get("recipient_email")
+                        resp = send_html_email(subject, html_body, to_email=to_email, headers=None)
+                        try:
+                            if to_email and isinstance(resp, dict):
+                                record_outbound_message(to_email, resp.get("message_id"), kind="cold", relates_to=None, references=None)
+                        except Exception:
+                            pass
                     except Exception:
                         pass
                 return Result(winning)
@@ -163,10 +172,23 @@ class Runner:
                     send_html_email = t
 
             reply_text = input_text
-            # Strip optional To: header block
+            # Optional To: header block and context to_email
+            to_email = None
+            if context and isinstance(context, dict):
+                to_email = context.get("to_email")
             if reply_text.lower().startswith("to:"):
-                parts = reply_text.split("\n\n", 1)
-                reply_text = parts[1] if len(parts) == 2 else reply_text
+                first_line, rest_text = (reply_text.split("\n", 1) + [""])[:2]
+                # Parse address after 'To:'
+                try:
+                    addr = first_line.split(":", 1)[1].strip()
+                    if addr:
+                        to_email = addr
+                except Exception:
+                    pass
+                # Strip leading To: block followed by optional blank line
+                if rest_text.startswith("\n"):
+                    rest_text = rest_text.lstrip("\n")
+                reply_text = rest_text
 
             # Extract optional subject line (first line followed by blank line)
             body_only = reply_text
@@ -202,7 +224,18 @@ class Runner:
             )
             if send_html_email:
                 try:
-                    send_html_email(subject, html_body)
+                    inbound_message_id = None
+                    references = None
+                    if context and isinstance(context, dict):
+                        inbound_message_id = context.get("inbound_message_id")
+                        references = context.get("references")
+                    headers = build_reply_headers(to_email=to_email, inbound_message_id=inbound_message_id, references=references)
+                    resp = send_html_email(subject, html_body, to_email=to_email, headers=headers)
+                    try:
+                        if to_email and isinstance(resp, dict):
+                            record_outbound_message(to_email, resp.get("message_id"), kind="reply", relates_to=inbound_message_id, references=headers.get("References"))
+                    except Exception:
+                        pass
                 except Exception:
                     pass
             return Result(reply_text)
