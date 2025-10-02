@@ -2,7 +2,7 @@ import asyncio
 from agent_sdk import Runner
 from .agents import sales_manager
 
-async def run_cold_workflow(product_pitch: str) -> dict:
+async def run_cold_workflow(product_pitch: str, recipient_email: str | None = None, recipient_name: str | None = None) -> dict:
     """
     Entry point for running the cold email workflow.
     This kicks off the Sales Manager agent, which:
@@ -12,7 +12,8 @@ async def run_cold_workflow(product_pitch: str) -> dict:
       4. Email Manager generates subject, formats HTML, and sends via SendGrid
     """
 
-    result = await Runner.run(sales_manager, product_pitch)
+    context = {"recipient_email": recipient_email, "recipient_name": recipient_name}
+    result = await Runner.run(sales_manager, product_pitch, context=context)
 
     return {
         "final_output": result.final_output,

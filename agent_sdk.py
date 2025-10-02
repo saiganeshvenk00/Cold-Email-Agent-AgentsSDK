@@ -1,4 +1,4 @@
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, List, Optional, Dict
 
 from openai import OpenAI
 
@@ -41,7 +41,7 @@ class Agent:
 
 class Runner:
     @staticmethod
-    async def run(agent: Agent, input_text: str) -> Result:
+    async def run(agent: Agent, input_text: str, context: Optional[Dict[str, Any]] = None) -> Result:
         # Special-case orchestration for our two manager agents to keep notebook flow intact
         if agent.name == "Sales Manager":
             # Identify sub-agents/tools
@@ -60,6 +60,20 @@ class Runner:
                 r = await persona.run(input_text)
                 drafts.append(r.final_output)
 
+            # Optional: derive recipient name using picker's tool
+            derived_name: Optional[str] = None
+            if context:
+                recipient_email = context.get("recipient_email")
+                recipient_name = context.get("recipient_name")
+                if sales_picker is not None:
+                    for t in getattr(sales_picker, "tools", []) or []:
+                        if callable(t) and getattr(t, "__name__", "") == "derive_recipient_name":
+                            try:
+                                derived_name = t(recipient_email or "", recipient_name or "")
+                            except Exception:
+                                derived_name = recipient_name or None
+                            break
+
             # Ask picker to choose best
             if sales_picker is not None:
                 drafts_block = "\n\n".join([f"Draft {i+1}:\n{d}" for i, d in enumerate(drafts)])
@@ -67,11 +81,24 @@ class Runner:
                     "Compare the following drafts and return ONLY the best one, verbatim.\n\n"
                     + drafts_block
                 )
+                if derived_name:
+                    first_name = derived_name.split()[0]
+                    pick_prompt = (
+                        "Recipient first name: " + first_name + "\n"
+                        "If the draft contains placeholders like [Name] or [First Name], replace them with the recipient first name before returning.\n\n"
+                        + pick_prompt
+                    )
                 pick_res = await sales_picker.run(pick_prompt)
                 winning = pick_res.final_output
                 # Normalize if the picker echoed with a leading label like "Draft X:"
                 if winning.strip().lower().startswith("draft "):
                     winning = winning.split("\n", 1)[1] if "\n" in winning else winning
+                # Safety: apply placeholder replacement in code as well
+                if derived_name:
+                    first_name = derived_name.split()[0]
+                    winning = (
+                        winning.replace("[Name]", first_name).replace("[First Name]", first_name)
+                    )
             else:
                 winning = drafts[0] if drafts else input_text
 
@@ -96,10 +123,24 @@ class Runner:
                         email_body_text = rest
                 subject = email_subject or (generate_subject(email_body_text) if generate_subject else "Quick introduction")
                 # Minimal HTML like the reply template (no inline font styles) for consistent rendering
-                paragraphs = [p.strip() for p in email_body_text.split("\n\n") if p.strip()]
+                raw_paragraphs = [p.strip() for p in email_body_text.split("\n\n") if p.strip()]
+                # Remove any placeholder closings or name tokens
+                cleaned_paragraphs = []
+                for para in raw_paragraphs:
+                    lower = para.lower()
+                    if "[your name]" in lower:
+                        continue
+                    if lower.startswith(("best,", "best regards", "regards,", "cheers,")):
+                        continue
+                    cleaned_paragraphs.append(para)
+                signature_html = (
+                    "<p>Regards,</p>"
+                    "<p>Sai Venkataraman<br>Sales Development Representative, NimbusFlow</p>"
+                )
                 html_body = (
                     "<html><body>"
-                    f"{''.join(f'<p>{para}</p>' for para in paragraphs)}"
+                    f"{''.join(f'<p>{para}</p>' for para in cleaned_paragraphs)}"
+                    f"{signature_html}"
                     "</body></html>"
                 )
                 if send_html_email:
@@ -139,16 +180,24 @@ class Runner:
 
             # Enforce strict HTML structure for replies
             company_name = "NimbusFlow"
+            role_title = "Sales Development Representative"
             greeting = "Hi, thank you so much for expressing your interest."
             # Wrap body content into paragraphs
-            paragraphs = [p.strip() for p in body_only.split("\n\n") if p.strip()]
+            raw_paragraphs = [p.strip() for p in body_only.split("\n\n") if p.strip()]
+            # Remove any existing closings to avoid duplicates
+            paragraphs = []
+            for para in raw_paragraphs:
+                lower = para.lower()
+                if lower.startswith(("best,", "best regards", "regards,", "cheers,")):
+                    continue
+                paragraphs.append(para)
             body_html = "".join(f"<p>{para}</p>" for para in paragraphs)
             html_body = (
                 "<html><body>"
                 f"<p>{greeting}</p>"
                 f"{body_html}"
-                "<p>Best regards,</p>"
-                f"<p>Saiganesh<br>{company_name}</p>"
+                "<p>Regards,</p>"
+                f"<p>Sai Venkataraman<br>{role_title}, {company_name}</p>"
                 "</body></html>"
             )
             if send_html_email:
