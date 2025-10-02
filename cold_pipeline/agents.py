@@ -1,5 +1,5 @@
 from agent_sdk import Agent
-from .tools import send_html_email, generate_subject
+from .tools import send_html_email, generate_subject, derive_recipient_name
 
 
 # --- Sales Agents (3 personas) ---
@@ -65,9 +65,12 @@ sales_picker = Agent(
     name="Sales Picker",
     instructions="""
     You are an evaluator. Pick the draft most likely to get a positive reply.
+    If a recipient email is provided, infer the recipient's name by calling the derive_recipient_name tool.
+    After selecting the best draft, replace any placeholder tokens like "[Name]" or "[First Name]" with the inferred name (use just the first name when appropriate), keeping punctuation intact.
     Criteria: subject clarity (short), body distinct from subject, clear value, social proof, specific CTA. Return only the winning draft.
     """,
-    model="gpt-4.1-mini"
+    model="gpt-4.1-mini",
+    tools=[derive_recipient_name]
 )
 
 # (Subject line generation is now handled by the simple generate_subject tool)

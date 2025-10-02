@@ -59,20 +59,15 @@ async def receive_incoming_reply(request: Request):
     # Run the reply pipeline
     result = await run_reply_workflow(email_from, subject, body)
 
-    # Extract managed reply (or fallback if missing)
+    # The Reply Email Manager already sent the formatted HTML.
+    # Avoid sending a second, poorly formatted email from here.
     managed_reply = result.get("final_output", "Thanks for your reply!")
-
-    # Send the email out (do not fail the webhook response on send issues)
-    email_send_status = "sent"
-    try:
-        send_html_email(f"Re: {subject}", f"<p>{managed_reply}</p>")
-    except Exception as e:
-        email_send_status = f"failed: {str(e)}"
+    email_send_status = "sent_by_manager"
 
     return {
         **result,
         "reply_sent": managed_reply,
-        "status": "processed and replied",
+        "status": "processed (email sent by manager)",
         "email_send_status": email_send_status
     }
 
