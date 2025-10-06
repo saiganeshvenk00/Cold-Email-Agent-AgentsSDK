@@ -34,7 +34,10 @@ def send_html_email(subject: str, html_body: str, to_email: Optional[str] = None
     sg = sendgrid.SendGridAPIClient(api_key=os.environ.get("SENDGRID_API_KEY"))
     # Sender is fixed as per requirement
     default_from = "saiganeshv00@gmail.com"
-    default_to = os.environ.get("DEFAULT_TO_EMAIL", "saiganeshvenk00@gmail.com")
+    default_to = os.environ.get("DEFAULT_TO_EMAIL")
+    # Require explicit destination (either argument or env var)
+    if not (to_email or default_to):
+        raise ValueError("No destination email provided. Pass to_email or set DEFAULT_TO_EMAIL.")
 
     from_email = Email(default_from)
     to_email_obj = To(to_email or default_to)

@@ -1,0 +1,34 @@
+{
+  "contacts": {
+    "saiganeshvenk00@gmail.com": {
+      "outbound": [
+        {
+          "message_id": "90NfOyoZRvCtt7fZoTtOOA",
+          "kind": "reply",
+          "relates_to": null,
+          "references": null
+        },
+        {
+          "message_id": "0-f8OjZZRBaQLGftgENNLQ",
+          "kind": "reply",
+          "relates_to": null,
+          "references": "90NfOyoZRvCtt7fZoTtOOA"
+        }
+      ],
+      "inbound": [],
+      "last_outbound_message_id": "0-f8OjZZRBaQLGftgENNLQ"
+    },
+    "sai.venkataraman@duke.edu": {
+      "outbound": [
+        {
+          "message_id": "FBYBv42ERXq_nXRsxM4Kgw",
+          "kind": "cold",
+          "relates_to": null,
+          "references": null
+        }
+      ],
+      "inbound": [],
+      "last_outbound_message_id": "FBYBv42ERXq_nXRsxM4Kgw"
+    }
+  }
+}
