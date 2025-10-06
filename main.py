@@ -12,7 +12,12 @@ async def main():
         "I'm a Solutions Architect with 3 years of experience in AI infrastructure and presales, "
         "and I’m reaching out to explore opportunities at your company."
     )
-    recipient_email = os.environ.get("COLD_RECIPIENT_EMAIL", "saiganeshvenk00@gmail.com")
+    recipient_email = os.environ.get("COLD_RECIPIENT_EMAIL")
+    if not recipient_email:
+        try:
+            recipient_email = input("Enter recipient email: ").strip()
+        except Exception:
+            recipient_email = None
     recipient_name = os.environ.get("COLD_RECIPIENT_NAME")
     cold_result = await run_cold_workflow(cold_pitch, recipient_email=recipient_email, recipient_name=recipient_name)
     print("\n=== Cold Pipeline Result ===")
