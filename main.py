@@ -1,6 +1,6 @@
 import asyncio
 from dotenv import load_dotenv
-from cold_pipeline import run_cold_workflow
+from cold_pipeline import run_cold_workflow, run_cold_workflow_bulk
 from reply_pipeline import run_reply_workflow
 
 async def main():
@@ -12,16 +12,34 @@ async def main():
         "I'm a Solutions Architect with 3 years of experience in AI infrastructure and presales, "
         "and I’m reaching out to explore opportunities at your company."
     )
-    recipient_email = os.environ.get("COLD_RECIPIENT_EMAIL")
-    if not recipient_email:
-        try:
-            recipient_email = input("Enter recipient email: ").strip()
-        except Exception:
-            recipient_email = None
-    recipient_name = os.environ.get("COLD_RECIPIENT_NAME")
-    cold_result = await run_cold_workflow(cold_pitch, recipient_email=recipient_email, recipient_name=recipient_name)
-    print("\n=== Cold Pipeline Result ===")
-    print(cold_result)
+    csv_path = os.environ.get("COLD_RECIPIENTS_CSV")
+    if csv_path:
+        bulk_results = await run_cold_workflow_bulk(cold_pitch, csv_path, concurrency=3)
+        print("\n=== Cold Pipeline Bulk Result ===")
+        print({"count": len(bulk_results)})
+    else:
+        recipient_email = os.environ.get("COLD_RECIPIENT_EMAIL")
+        if not recipient_email:
+            try:
+                recipient_email = input("Enter recipient email (leave blank to provide CSV path): ").strip()
+            except Exception:
+                recipient_email = None
+        if not recipient_email:
+            try:
+                csv_path = input("Enter path to CSV (leave blank to skip): ").strip()
+            except Exception:
+                csv_path = ""
+            if csv_path:
+                bulk_results = await run_cold_workflow_bulk(cold_pitch, csv_path, concurrency=3)
+                print("\n=== Cold Pipeline Bulk Result ===")
+                print({"count": len(bulk_results)})
+            else:
+                print("No recipient provided. Skipping cold pipeline.")
+        else:
+            recipient_name = os.environ.get("COLD_RECIPIENT_NAME")
+            cold_result = await run_cold_workflow(cold_pitch, recipient_email=recipient_email, recipient_name=recipient_name)
+            print("\n=== Cold Pipeline Result ===")
+            print(cold_result)
 
     # --- Example: Reply pipeline (guarded demo) ---
     # Set RUN_REPLY_DEMO=1 to run this example; otherwise it will be skipped.
