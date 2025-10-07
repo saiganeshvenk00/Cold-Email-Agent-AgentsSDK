@@ -9,7 +9,7 @@ import uvicorn
 from dotenv import load_dotenv
 from thread_store import record_inbound_message
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 import csv
 import tempfile
@@ -272,6 +272,7 @@ async def ws_progress(ws: WebSocket):
 _frontend_dist = os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")
 _frontend_dist = os.path.abspath(_frontend_dist)
 if os.path.isdir(_frontend_dist):
+    # Serve built frontend at root so /assets paths resolve; API routes start with /api and are unaffected
     app.mount("/", StaticFiles(directory=_frontend_dist, html=True), name="frontend")
 else:
     @app.get("/", response_class=HTMLResponse)
