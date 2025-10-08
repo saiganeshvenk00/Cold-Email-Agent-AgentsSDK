@@ -43,10 +43,70 @@
           "kind": "cold",
           "relates_to": null,
           "references": null
+        },
+        {
+          "message_id": "kMbLSyRyRjCanJEYo55Rwg",
+          "kind": "cold",
+          "relates_to": null,
+          "references": null
         }
       ],
       "inbound": [],
-      "last_outbound_message_id": "XHV6eKvzTQ-ANs9Jghasxw"
+      "last_outbound_message_id": "kMbLSyRyRjCanJEYo55Rwg"
+    },
+    "sai.venkataraman@dell.com": {
+      "outbound": [
+        {
+          "message_id": "WycDSN5HQUatVs9qf8m8Yg",
+          "kind": "cold",
+          "relates_to": null,
+          "references": null
+        },
+        {
+          "message_id": "PrPRpx-5TZu1zlMUIsA5LQ",
+          "kind": "cold",
+          "relates_to": null,
+          "references": null
+        }
+      ],
+      "inbound": [],
+      "last_outbound_message_id": "PrPRpx-5TZu1zlMUIsA5LQ"
+    },
+    "test@example.com": {
+      "outbound": [
+        {
+          "message_id": "tl5HhCTxT2uSihin1LN2PQ",
+          "kind": "cold",
+          "relates_to": null,
+          "references": null
+        }
+      ],
+      "inbound": [],
+      "last_outbound_message_id": "tl5HhCTxT2uSihin1LN2PQ"
+    },
+    "recruiter@example.com": {
+      "outbound": [
+        {
+          "message_id": "JZtoUqe2TriUGzblYG4skg",
+          "kind": "reply",
+          "relates_to": null,
+          "references": null
+        }
+      ],
+      "inbound": [],
+      "last_outbound_message_id": "JZtoUqe2TriUGzblYG4skg"
+    },
+    "user1@example.com": {
+      "outbound": [
+        {
+          "message_id": "qcK-2uzSSwqSsP6HdtnJ6Q",
+          "kind": "cold",
+          "relates_to": null,
+          "references": null
+        }
+      ],
+      "inbound": [],
+      "last_outbound_message_id": "qcK-2uzSSwqSsP6HdtnJ6Q"
     }
   }
 }
