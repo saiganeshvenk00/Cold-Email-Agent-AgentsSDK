@@ -1,7 +1,91 @@
 import asyncio
+import os
+from typing import Optional, List, Dict, Any
 from dotenv import load_dotenv
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
 from cold_pipeline import run_cold_workflow, run_cold_workflow_bulk
 from reply_pipeline import run_reply_workflow
+
+# FastAPI app for Vercel (exports `app` and `handler`)
+app = FastAPI()
+handler = app  # Some platforms look specifically for `handler`
+
+
+class ColdRequest(BaseModel):
+    product_pitch: str
+    recipient_email: Optional[str] = None
+    recipient_name: Optional[str] = None
+
+
+class ColdBulkRequest(BaseModel):
+    product_pitch: str
+    recipients: Optional[List[Dict[str, Optional[str]]]] = None
+    csv_path: Optional[str] = None
+    concurrency: int = 3
+
+
+class ReplyRequest(BaseModel):
+    email_from: str
+    subject: str
+    body: str
+    inbound_message_id: Optional[str] = None
+    references: Optional[str] = None
+
+
+def _strip_raw_result(data: Any) -> Any:
+    if isinstance(data, dict):
+        return {k: _strip_raw_result(v) for k, v in data.items() if k != "raw_result"}
+    if isinstance(data, list):
+        return [_strip_raw_result(v) for v in data]
+    return data
+
+
+@app.get("/api/health")
+async def health() -> Dict[str, str]:
+    return {"status": "ok"}
+
+
+@app.post("/api/cold")
+async def api_cold(payload: ColdRequest) -> Dict[str, Any]:
+    try:
+        result = await run_cold_workflow(
+            payload.product_pitch,
+            recipient_email=payload.recipient_email,
+            recipient_name=payload.recipient_name,
+        )
+        return _strip_raw_result(result)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/cold/bulk")
+async def api_cold_bulk(payload: ColdBulkRequest) -> Dict[str, Any]:
+    try:
+        recipients_or_path: Any = payload.csv_path if payload.csv_path else (payload.recipients or [])
+        result_list = await run_cold_workflow_bulk(
+            payload.product_pitch,
+            recipients_or_path,
+            concurrency=max(1, int(payload.concurrency)),
+        )
+        return {"results": _strip_raw_result(result_list)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/reply")
+async def api_reply(payload: ReplyRequest) -> Dict[str, Any]:
+    try:
+        result = await run_reply_workflow(
+            payload.email_from,
+            payload.subject,
+            payload.body,
+            inbound_message_id=payload.inbound_message_id,
+            references=payload.references,
+        )
+        return _strip_raw_result(result)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 async def main():
     # Load environment variables from .env for local testing
