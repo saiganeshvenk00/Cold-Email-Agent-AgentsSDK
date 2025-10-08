@@ -90,17 +90,17 @@ function UI() {
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   return (
-    <AppShell navbar={{ width: 320, breakpoint: 'sm' }} padding="lg" header={{ height: 60 }}>
+    <AppShell navbar={{ width: 420, breakpoint: 'md' }} padding="xl" header={{ height: 88 }}>
       <AppShell.Header>
-        <Container size="xl" style={{ height: '100%' }}>
-          <Group h="100%" justify="space-between">
-            <Title order={2}>Cold Email Agent</Title>
-            <Text c="dimmed" size="sm">Simple, fast outreach</Text>
-          </Group>
+        <Container size={1440} style={{ height: '100%' }}>
+          <Stack h="100%" align="center" justify="center" gap={4}>
+            <Title order={2} ta="center">Cold Email Agent</Title>
+            <Text c="dimmed" size="sm" style={{ fontStyle: 'italic' }} ta="center">Simple, fast outreach</Text>
+          </Stack>
         </Container>
       </AppShell.Header>
       <AppShell.Navbar>
-        <Stack p="lg" gap="md" style={{ height: '100%' }}>
+        <Stack p="lg" gap="lg" style={{ height: '100%' }}>
           <Title order={4}>Settings</Title>
           <PasswordInput size="md" label="OpenAI API Key" placeholder="sk-..." value={openaiKey} onChange={(e) => setOpenaiKey(e.currentTarget.value)} />
           <PasswordInput size="md" label="SendGrid API Key" placeholder="SG...." value={sendgridKey} onChange={(e) => setSendgridKey(e.currentTarget.value)} />
@@ -110,9 +110,9 @@ function UI() {
         </Stack>
       </AppShell.Navbar>
       <AppShell.Main>
-        <Container size="xl">
-          <Stack gap="xl" my="xl" align="center">
-            <Card withBorder radius="md" p="xl" shadow="sm" style={{ width: '100%', maxWidth: 960 }}>
+        <Container size={1440}>
+          <Stack gap="xl" my="xl" align="stretch">
+            <Card withBorder radius="md" p="xl" shadow="sm" style={{ width: '100%', maxWidth: 1200 }}>
               <Stack gap="md">
                 <Title order={3}>Cold Outreach</Title>
                 <Text c="dimmed" size="sm">Send a single email or attach a CSV to send in bulk.</Text>
@@ -128,7 +128,7 @@ function UI() {
                 </Group>
               </Stack>
             </Card>
-            <Card withBorder radius="md" p="xl" shadow="sm" style={{ width: '100%', maxWidth: 960 }}>
+            <Card withBorder radius="md" p="xl" shadow="sm" style={{ width: '100%', maxWidth: 1200 }}>
               <Title order={4} mb="sm">Activity</Title>
               <Paper withBorder p="xs">
                 <ScrollArea h={300} type="always" offsetScrollbars>
