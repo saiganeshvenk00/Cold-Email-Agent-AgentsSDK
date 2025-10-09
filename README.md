@@ -252,23 +252,29 @@ https://cold-email-agent-agentssdk.onrender.com/incoming-reply
 #### Option 1: Use Deployed Version (Recommended)
 Visit [https://cold-email-agent-agentssdk.onrender.com/](https://cold-email-agent-agentssdk.onrender.com/) and configure your API keys in the Settings panel.
 
-#### Option 2: Web UI (Local)
+#### Option 2: Local Server (Web UI + API + Webhook)
 ```bash
 python main.py
 ```
 Then open browser to `http://localhost:8000`
 
+This starts the full server with:
+- Web UI at `/`
+- API endpoints at `/api/*`
+- Webhook at `/incoming-reply`
+- WebSocket at `/ws/progress`
+
 #### Option 3: CLI Mode
-Set environment variables and run:
+Set environment variables and run with `--cli` flag:
 ```bash
 # For single cold email
-COLD_RECIPIENT_EMAIL=john@example.com python main.py
+COLD_RECIPIENT_EMAIL=john@example.com python main.py --cli
 
 # For bulk cold emails
-COLD_RECIPIENTS_CSV=test.csv python main.py
+COLD_RECIPIENTS_CSV=test.csv python main.py --cli
 
 # For reply demo
-RUN_REPLY_DEMO=1 python main.py
+RUN_REPLY_DEMO=1 python main.py --cli
 ```
 
 #### Option 4: API Mode
@@ -332,6 +338,25 @@ info@startup.io,
 | `/api/cold/send` | POST | Frontend single send endpoint |
 | `/api/cold/upload` | POST | Frontend CSV upload endpoint |
 | `/ws/progress` | WebSocket | Real-time progress updates |
+
+## 🧪 Testing the Webhook
+
+After deployment, verify the webhook is accessible:
+
+```bash
+# Run the test script
+python test_webhook.py
+```
+
+This will test both local and production webhooks and provide clear pass/fail results.
+
+**Manual testing with curl:**
+```bash
+# Should return 422 (validation error) or 200, NOT 404
+curl -X POST https://cold-email-agent-agentssdk.onrender.com/incoming-reply \
+  -H "Content-Type: application/json" \
+  -d '{"from":"test@example.com","subject":"Test","text":"Test message"}'
+```
 
 ## 🔧 Agent SDK Implementation
 
@@ -453,6 +478,13 @@ All events include timestamps and are broadcast via WebSocket for instant visibi
 - The app is deployed on Render at [https://cold-email-agent-agentssdk.onrender.com/](https://cold-email-agent-agentssdk.onrender.com/)
 - Environment variables must be set in Render dashboard
 - Cold starts may take 30-60 seconds on free tier
+- Verify webhook is accessible: Run `python test_webhook.py`
+
+**Webhook not triggering?**
+- Verify the endpoint is accessible: `curl https://cold-email-agent-agentssdk.onrender.com/incoming-reply` (should return 422 or method not allowed, NOT 404)
+- Check Render logs for incoming requests
+- Verify SendGrid Inbound Parse is configured correctly
+- Test with the provided `test_webhook.py` script
 
 ## 📄 License
 
