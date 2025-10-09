@@ -65,8 +65,10 @@ def send_html_email(subject: str, html_body: str, to_email: Optional[str] = None
     Returns response headers so caller can capture provider Message-ID.
     """
     sg = sendgrid.SendGridAPIClient(api_key=os.environ.get("SENDGRID_API_KEY"))
-    # Sender is fixed as per requirement
-    default_from = "saiganeshv00@gmail.com"
+    # Sender email from environment variable (set by user in frontend)
+    default_from = os.environ.get("DEFAULT_FROM_EMAIL")
+    if not default_from:
+        raise ValueError("No sender email configured. Please set your From Email in Settings.")
     default_to = os.environ.get("DEFAULT_TO_EMAIL")
     # Require explicit destination (either argument or env var)
     if not (to_email or default_to):
@@ -155,17 +157,20 @@ async def receive_incoming_reply(request: Request):
 
 @app.post("/api/keys")
 async def set_keys(request: Request):
-    """Accept OpenAI and SendGrid API keys and set for this process (no persistence)."""
+    """Accept OpenAI and SendGrid API keys and sender email, set for this process (no persistence)."""
     try:
         data = await request.json()
     except Exception:
         data = {}
     openai_key = (data or {}).get("openai_api_key")
     sendgrid_key = (data or {}).get("sendgrid_api_key")
+    from_email = (data or {}).get("from_email")
     if isinstance(openai_key, str) and openai_key.strip():
         os.environ["OPENAI_API_KEY"] = openai_key.strip()
     if isinstance(sendgrid_key, str) and sendgrid_key.strip():
         os.environ["SENDGRID_API_KEY"] = sendgrid_key.strip()
+    if isinstance(from_email, str) and from_email.strip():
+        os.environ["DEFAULT_FROM_EMAIL"] = from_email.strip()
     return {"status": "ok"}
 
 
@@ -314,7 +319,8 @@ else:
     function saveKeys() {
       const openai = document.getElementById('openai').value.trim();
       const sendgrid = document.getElementById('sendgrid').value.trim();
-      fetch('/api/keys', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ openai_api_key: openai, sendgrid_api_key: sendgrid }) })
+      const fromEmail = document.getElementById('fromEmail').value.trim();
+      fetch('/api/keys', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ openai_api_key: openai, sendgrid_api_key: sendgrid, from_email: fromEmail }) })
         .then(() => log('API keys saved for this session'))
         .catch(e => log('Error saving keys: ' + e));
     }
@@ -360,6 +366,11 @@ else:
       <div class=\"field\">
         <label for=\"sendgrid\">SendGrid API Key</label>
         <input id=\"sendgrid\" type=\"password\" placeholder=\"SG....\" />
+      </div>
+      <div class=\"field\">
+        <label for=\"fromEmail\">From Email (Sender)</label>
+        <input id=\"fromEmail\" type=\"email\" placeholder=\"you@example.com\" />
+        <small style=\"color: #94a3b8; margin-top: 4px; display: block;\">Use email verified in SendGrid. <a href=\"https://app.sendgrid.com/settings/sender_auth\" target=\"_blank\" style=\"color: #60a5fa;\">Setup here</a></small>
       </div>
       <button class=\"button\" onclick=\"saveKeys()\">Save Keys</button>
     </aside>

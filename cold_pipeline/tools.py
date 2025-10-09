@@ -23,8 +23,10 @@ def send_html_email(subject: str, html_body: str, to_email: Optional[str] = None
     Returns response headers so caller can capture provider Message-ID.
     """
     sg = sendgrid.SendGridAPIClient(api_key=os.environ.get("SENDGRID_API_KEY"))
-    # Sender is fixed as per requirement
-    default_from = "saiganeshv00@gmail.com"
+    # Sender email from environment variable (set by user in frontend)
+    default_from = os.environ.get("DEFAULT_FROM_EMAIL")
+    if not default_from:
+        raise ValueError("No sender email configured. Please set your From Email in Settings.")
     default_to = os.environ.get("DEFAULT_TO_EMAIL")
     # Require explicit destination (either argument or env var)
     if not (to_email or default_to):

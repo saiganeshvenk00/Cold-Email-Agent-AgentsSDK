@@ -6,6 +6,7 @@ import { IconPaperclip } from '@tabler/icons-react'
 function UI() {
   const [openaiKey, setOpenaiKey] = useState('')
   const [sendgridKey, setSendgridKey] = useState('')
+  const [fromEmail, setFromEmail] = useState('')
   const [email, setEmail] = useState('')
   const [name, setName] = useState('')
   const [pitch, setPitch] = useState("I'm reaching out to connect and explore potential opportunities for collaboration. I have experience in technology solutions and would love to discuss how we might work together.")
@@ -50,7 +51,7 @@ function UI() {
 
   async function saveKeys() {
     try {
-      await fetch('/api/keys', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ openai_api_key: openaiKey, sendgrid_api_key: sendgridKey }) })
+      await fetch('/api/keys', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ openai_api_key: openaiKey, sendgrid_api_key: sendgridKey, from_email: fromEmail }) })
       notifications.show({ title: 'Keys saved', message: 'Saved for this session', color: 'green' })
     } catch (e: any) {
       notifications.show({ title: 'Error saving keys', message: String(e), color: 'red' })
@@ -104,6 +105,10 @@ function UI() {
           <Title order={4}>Settings</Title>
           <PasswordInput size="md" label="OpenAI API Key" placeholder="sk-..." value={openaiKey} onChange={(e) => setOpenaiKey(e.currentTarget.value)} />
           <PasswordInput size="md" label="SendGrid API Key" placeholder="SG...." value={sendgridKey} onChange={(e) => setSendgridKey(e.currentTarget.value)} />
+          <TextInput size="md" label="From Email (Sender)" placeholder="you@example.com" value={fromEmail} onChange={(e) => setFromEmail(e.currentTarget.value)} />
+          <Text size="xs" c="dimmed" style={{ marginTop: -8 }}>
+            Use the email address verified in your SendGrid account. <a href="https://app.sendgrid.com/settings/sender_auth" target="_blank" rel="noopener noreferrer" style={{ color: '#228be6' }}>Set up sender verification</a>
+          </Text>
           <Button size="md" fullWidth onClick={saveKeys}>Save Keys</Button>
           <Space h="md" />
           <Text size="xs" c="dimmed">Tip: Upload a CSV to send to many recipients at once.</Text>
