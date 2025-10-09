@@ -49,10 +49,16 @@
           "kind": "cold",
           "relates_to": null,
           "references": null
+        },
+        {
+          "message_id": "HAs4KVwnS5CJwNZytgBNzg",
+          "kind": "cold",
+          "relates_to": null,
+          "references": null
         }
       ],
       "inbound": [],
-      "last_outbound_message_id": "kMbLSyRyRjCanJEYo55Rwg"
+      "last_outbound_message_id": "HAs4KVwnS5CJwNZytgBNzg"
     },
     "sai.venkataraman@dell.com": {
       "outbound": [

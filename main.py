@@ -92,9 +92,9 @@ async def main():
     load_dotenv()
     # --- Example: Cold pipeline ---
     import os
-    cold_pitch = (
-        "I'm a Solutions Architect with 3 years of experience in AI infrastructure and presales, "
-        "and I’m reaching out to explore opportunities at your company."
+    cold_pitch = os.environ.get("COLD_PITCH") or (
+        "I'm reaching out to connect and explore potential opportunities for collaboration. "
+        "I have experience in technology solutions and would love to discuss how we might work together."
     )
     csv_path = os.environ.get("COLD_RECIPIENTS_CSV")
     if csv_path:

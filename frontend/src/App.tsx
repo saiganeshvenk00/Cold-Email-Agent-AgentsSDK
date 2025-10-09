@@ -8,7 +8,7 @@ function UI() {
   const [sendgridKey, setSendgridKey] = useState('')
   const [email, setEmail] = useState('')
   const [name, setName] = useState('')
-  const [pitch, setPitch] = useState("I'm a Solutions Architect with 3 years of experience in AI infrastructure and presales, and I’m reaching out to explore opportunities at your company.")
+  const [pitch, setPitch] = useState("I'm reaching out to connect and explore potential opportunities for collaboration. I have experience in technology solutions and would love to discuss how we might work together.")
   const logRef = useRef<HTMLDivElement | null>(null)
   const wsRef = useRef<WebSocket | null>(null)
 

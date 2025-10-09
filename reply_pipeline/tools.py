@@ -179,7 +179,7 @@ async def api_cold_send(request: Request):
     email = (payload or {}).get("email")
     name = (payload or {}).get("name")
     pitch = (payload or {}).get("pitch") or (
-        "I'm a Solutions Architect with 3 years of experience in AI infrastructure and presales, and I’m reaching out to explore opportunities at your company."
+        "I'm reaching out to connect and explore potential opportunities for collaboration."
     )
     if not email:
         return {"status": "error", "error": "missing_email"}
@@ -239,7 +239,7 @@ async def api_cold_upload(file: UploadFile = File(...)):
         async with sem:
             try:
                 r = await run_cold_workflow(
-                    "I'm a Solutions Architect with 3 years of experience in AI infrastructure and presales, and I’m reaching out to explore opportunities at your company.",
+                    "I'm reaching out to connect and explore potential opportunities for collaboration.",
                     recipient_email=email,
                     recipient_name=name,
                 )

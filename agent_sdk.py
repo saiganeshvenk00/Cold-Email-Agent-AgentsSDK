@@ -136,7 +136,7 @@ class Runner:
                     cleaned_paragraphs.append(para)
                 signature_html = (
                     "<p>Regards,</p>"
-                    "<p>Sai Venkataraman<br>Sales Development Representative, NimbusFlow</p>"
+                    "<p>Sai Venkataraman</p>"
                 )
                 html_body = (
                     "<html><body>"
@@ -201,9 +201,7 @@ class Runner:
             subject = extracted_subject or (generate_subject(body_only) if generate_subject else "Re:")
 
             # Enforce strict HTML structure for replies
-            company_name = "NimbusFlow"
-            role_title = "Sales Development Representative"
-            greeting = "Hi, thank you so much for expressing your interest."
+            greeting = "Hi, thank you for your reply."
             # Wrap body content into paragraphs
             raw_paragraphs = [p.strip() for p in body_only.split("\n\n") if p.strip()]
             # Remove any existing closings to avoid duplicates
@@ -219,7 +217,7 @@ class Runner:
                 f"<p>{greeting}</p>"
                 f"{body_html}"
                 "<p>Regards,</p>"
-                f"<p>Sai Venkataraman<br>{role_title}, {company_name}</p>"
+                f"<p>Sai Venkataraman</p>"
                 "</body></html>"
             )
             if send_html_email:
