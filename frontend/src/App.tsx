@@ -29,17 +29,50 @@ function UI() {
       const url = `${proto}://${window.location.host}/ws/progress`
       const ws = new WebSocket(url)
       wsRef.current = ws
-      ws.onopen = () => appendLog('WebSocket connected')
+      ws.onopen = () => appendLog('✅ WebSocket connected - Real-time updates enabled')
       ws.onmessage = (ev) => {
         try {
           const data = JSON.parse(ev.data)
-          appendLog('Event: ' + JSON.stringify(data))
+          // Format different event types for better readability
+          switch (data.type) {
+            case 'reply_received':
+              appendLog(`📨 REPLY RECEIVED from ${data.from}`)
+              appendLog(`   Subject: ${data.subject}`)
+              break
+            case 'reply_pipeline_started':
+              appendLog(`🤖 Reply Pipeline ACTIVATED for ${data.from}`)
+              appendLog(`   Processing automated response...`)
+              break
+            case 'reply_sent':
+              appendLog(`✅ Auto-reply SENT to ${data.from}`)
+              break
+            case 'reply_error':
+              appendLog(`❌ Reply pipeline error: ${data.error}`)
+              break
+            case 'cold_send_started':
+              appendLog(`📤 Sending cold email to ${data.email}...`)
+              break
+            case 'cold_send_completed':
+              appendLog(`✅ Cold email sent to ${data.email}`)
+              break
+            case 'cold_send_error':
+              appendLog(`❌ Error sending to ${data.email}: ${data.error}`)
+              break
+            case 'bulk_started':
+              appendLog(`📦 Bulk send started (${data.count} recipients)`)
+              break
+            case 'bulk_completed':
+              appendLog(`✅ Bulk send completed (${data.count} emails)`)
+              break
+            default:
+              appendLog('Event: ' + JSON.stringify(data))
+          }
         } catch {
           appendLog('WS message: ' + ev.data)
         }
       }
-      ws.onerror = () => appendLog('WebSocket error')
-      ws.onclose = () => appendLog('WebSocket closed')
+      ws.onerror = () => appendLog('⚠️ WebSocket error')
+      ws.onclose = () => appendLog('🔌 WebSocket closed')
     } catch (e: any) {
       appendLog('WS init error: ' + String(e))
     }

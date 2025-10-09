@@ -127,6 +127,14 @@ async def receive_incoming_reply(request: Request):
         h_lower = { (k.lower() if isinstance(k, str) else k): v for k, v in headers_obj.items() }
         references_raw = h_lower.get("references")
 
+    # Broadcast: Reply received
+    await _broadcast({
+        "type": "reply_received",
+        "from": email_from,
+        "subject": subject,
+        "message_id": inbound_message_id
+    })
+
     # Persist inbound for threading
     try:
         if inbound_message_id:
@@ -137,20 +145,44 @@ async def receive_incoming_reply(request: Request):
     # Import here to avoid circular import at module load time
     from .workflow import run_reply_workflow
 
-    # Run the reply pipeline
-    result = await run_reply_workflow(email_from, subject, body, inbound_message_id=inbound_message_id, references=references_raw)
+    # Broadcast: Reply pipeline started
+    await _broadcast({
+        "type": "reply_pipeline_started",
+        "from": email_from,
+        "subject": subject
+    })
 
-    # The Reply Email Manager already sent the formatted HTML.
-    # Avoid sending a second, poorly formatted email from here.
-    managed_reply = result.get("final_output", "Thanks for your reply!")
-    email_send_status = "sent_by_manager"
+    try:
+        # Run the reply pipeline
+        result = await run_reply_workflow(email_from, subject, body, inbound_message_id=inbound_message_id, references=references_raw)
 
-    return {
-        **result,
-        "reply_sent": managed_reply,
-        "status": "processed (email sent by manager)",
-        "email_send_status": email_send_status
-    }
+        # The Reply Email Manager already sent the formatted HTML.
+        # Avoid sending a second, poorly formatted email from here.
+        managed_reply = result.get("final_output", "Thanks for your reply!")
+        email_send_status = "sent_by_manager"
+
+        # Broadcast: Reply sent successfully
+        await _broadcast({
+            "type": "reply_sent",
+            "from": email_from,
+            "to": email_from,
+            "status": "success"
+        })
+
+        return {
+            **result,
+            "reply_sent": managed_reply,
+            "status": "processed (email sent by manager)",
+            "email_send_status": email_send_status
+        }
+    except Exception as e:
+        # Broadcast: Reply pipeline error
+        await _broadcast({
+            "type": "reply_error",
+            "from": email_from,
+            "error": str(e)
+        })
+        raise
 
 
 # --- Minimal API for UI ---
